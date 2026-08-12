@@ -158,65 +158,65 @@ export class Tar
 
     if archive =~# '\.bz2$'
       exe 'sil! r! bzip2 -d -c -- ' .. shellescape(archive, 1)
-          .. '| ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+          .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
           .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
       exe 'read ' .. escapeFile
     elseif archive =~# '\.bz3$'
       exe 'sil! r! bzip3 -d -c -- ' .. shellescape(archive, 1)
-          .. '| ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+          .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
           .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
       exe 'read ' .. escapeFile
     elseif archive =~# '\.gz$'
       exe 'sil! r! gzip -d -c -- ' .. shellescape(archive, 1)
-          .. '| ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+          .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
           .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
       exe 'read ' .. escapeFile
     elseif archive =~# '\.tgz$\|\.tbz$\|\.txz$'
       var kind = Tar.Header(archive)
       if kind ==? 'bzip2'
         exe 'sil! r! bzip2 -d -c -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
             .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
         exe 'read ' .. escapeFile
       elseif kind ==? 'bzip3'
         exe 'sil! r! bzip3 -d -c -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
             .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
         exe 'read ' .. escapeFile
       elseif kind ==? 'xz'
         exe 'sil! r! xz -d -c -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
             .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
         exe 'read ' .. escapeFile
       elseif kind ==? 'zstd'
         exe 'sil! r! zstd --decompress --stdout -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
             .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
         exe 'read ' .. escapeFile
       elseif kind ==? 'gzip'
         exe 'sil! r! gzip -d -c -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
             .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
         exe 'read ' .. escapeFile
       endif
     elseif archive =~# '\.lrp$'
       exe 'sil! r! cat -- ' .. shellescape(archive, 1) .. ' | gzip -d -c - | '
-          .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+          .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
           .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
       exe 'read ' .. escapeFile
     elseif archive =~# '\.lzma$'
       exe 'sil! r! lzma -d -c -- ' .. shellescape(archive, 1)
-          .. '| ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+          .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
           .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
       exe 'read ' .. escapeFile
     elseif archive =~# '\.xz$\|\.txz$'
       exe 'sil! r! xz --decompress --stdout -- ' .. shellescape(archive, 1) .. ' | '
-          .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+          .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
           .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
       exe 'read ' .. escapeFile
     elseif archive =~# '\.lz4$\|\.tlz4$'
       exe 'sil! r! lz4 --decompress --stdout -- ' .. shellescape(archive, 1) .. ' | '
-          .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' - '
+          .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
           .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
       exe 'read ' .. escapeFile
     else
@@ -224,7 +224,7 @@ export class Tar
         # a name starting with a dash could be taken as an option
         archive = substitute(archive, '-', './-', '')
       endif
-      exe 'silent r! ' .. g:tar_cmd .. ' -' .. g:tar_readoptions .. ' '
+      exe 'silent r! ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' '
           .. shellescape(archive, 1) .. ' ' .. g:tar_secure
           .. shellescape(this.fileName, 1) .. decmp
       exe 'read ' .. escapeFile
@@ -295,10 +295,10 @@ export class Tar
     var repkeep = &report
     &report = 10
 
-    if !executable(g:tar_cmd)
+    if !executable(g:tartree_tar_cmd)
       redraw!
       &report = repkeep
-      Tar.Msg('Write', 'error', $'{g:tar_cmd} is not executable')
+      Tar.Msg('Write', 'error', $'{g:tartree_tar_cmd} is not executable')
       return
     endif
 
@@ -398,12 +398,12 @@ export class Tar
     # delete old member from archive
     # Note: BSD tar does not support --delete
     # Never go full BSD. Install GNU tar
-    system(g:tar_cmd .. ' ' .. g:tar_delfile .. ' ' .. shellescape(archive, 0) .. g:tar_secure .. shellescape(filename, 0))
+    system(g:tartree_tar_cmd .. ' ' .. g:tartree_tar_delfile .. ' ' .. shellescape(archive, 0) .. g:tar_secure .. shellescape(filename, 0))
     if v:shell_error != 0
       Tar.Msg('Write', 'error', $'sorry, unable to update {fnameescape(archive)} with {fnameescape(filename)} --delete not supported?')
     else
       # add the updated member back in
-      system(g:tar_cmd .. ' -' .. g:tar_writeoptions .. ' ' .. shellescape(archive, 0) .. g:tar_secure .. shellescape(filename, 0))
+      system(g:tartree_tar_cmd .. ' -' .. g:tartree_tar_writeoptions .. ' ' .. shellescape(archive, 0) .. g:tar_secure .. shellescape(filename, 0))
       if v:shell_error != 0
         Tar.Msg('Write', 'error', $'sorry, unable to update {fnameescape(archive)} with {fnameescape(filename)}')
       elseif compress != ''
