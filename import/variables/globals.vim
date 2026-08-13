@@ -4,7 +4,7 @@ g:tartree_win_width = get(g:, 'tartree_win_width', 31)
 g:tartree_show_hidden = get(g:, 'tartree_show_hidden', 0)
 g:tartree_arrow_open = get(g:, 'tartree_arrow_open', '▾ ')
 g:tartree_arrow_closed = get(g:, 'tartree_arrow_closed', '▸ ')
-g:tartree_auto_open = get(g:, 'tartree_auto_open', 1)
+g:tartree_auto_open = get(g:, 'tartree_auto_open', 0)
 
 
 g:tartree_tar_browseoptions = get(g:, 'tartree_tar_browseoptions', 'tf')
