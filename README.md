@@ -2,6 +2,8 @@
 
 A simple tree browser to view/edit files within a tar archive.
 
+![TarTree Screenshot](ScreenShot.png)
+
 # Requirements
 
 TarTree was written in vim9script and thus depends on Vim 9. Built and tested on Vim 9.2.
