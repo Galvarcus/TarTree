@@ -66,8 +66,7 @@ Then run `:PlugInstall`
 ==============================================================================
 4. Usage                                                       *TarTree-usage*
 
-
-:TARTREE PATH_TO_TAR_FILE ~
+`:TarTree PATH_TO_TAR_FILE`
 
 Opens the tarfile in a tree view split similar to Netrw or NERDTree with the
 following command options:
@@ -81,13 +80,11 @@ following command options:
 - q
     - quits the tree
 
-
-:TARTREETOGGLE ~
+`:TarTreeToggle`
 
 Toggles on/off the tree view
 
-
-:TARTREECLOSE ~
+`:TarTreeClose`
 
 Closes the TarTree pane
 
@@ -139,37 +136,31 @@ You can help by testing and submitting an issue here.
 To customize TarTree, set the following global variables in your `~/vimrc`
 prefixed with `let` for legacy .vimrc.
 
-
-G:TARTREE_WIN_WIDTH ~
+`g:tartree_win_width`
 
 Sets the width of the TarTree vsplit Default: 31
 
-
-G:TARTREE_SHOW_HIDDEN ~
+`g:tartree_show_hidden`
 
 - 1 to list dot files
 - 0 (default) to hide dot files
 
-
-G:TARTREE_ARROW_OPEN ~
+`g:tartree_arrow_open`
 
 Character to display next to open directories, e.g. '-' Default: '▾'
 
-
-G:TARTREE_ARROW_CLOSED ~
+`g:tartree_arrow_closed`
 
 Character to display next to closed directories, e.g. '+' Default: '▸'
 
-
-G:TARTREE_AUTO_OPEN ~
+`g:tartree_auto_open`
 
 Option to enable TarTree to list a tar file opened with `:e`
 
 - 1 to enable
 - 0 (default) to disable
 
-
-G:TARTREE_TAR_CMD ~
+`g:tartree_tar_cmd`
 
 Tar executable full path or command in your $PATH. Defaults to 'tar'
 
