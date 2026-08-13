@@ -1,7 +1,9 @@
 name: panvimdoc
 
 on: 
-  [push]
+  push:
+     branches:
+       - main
   workflow_dispatch:
 
 jobs:
