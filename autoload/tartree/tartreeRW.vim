@@ -10,7 +10,7 @@ var is_loaded: bool = true
 # runtime/autoload/tar.vim. Original license retained below, sans
 # changelog. See https://github.com/vim/vim
 #
-# # AI Notice: refactored into Vim9 OOP class with AI assistance. 
+# AI Notice: refactored into Vim9 OOP class with AI assistance. 
 # (Ask for which one, as adverts have no place here.)
 #######################################################################
 # Original Header: with Copyright Notice
@@ -391,6 +391,7 @@ export class Tar
     exe 'w ' .. fnameescape(filename)
     &l:buftype = buftypeKeep
     autocmd TarClass BufWriteCmd,FileWriteCmd <buffer> TarWriteCmd()
+
     if has('win32unix') && executable('cygpath')
       archive = substitute(system('cygpath ' .. shellescape(archive, 0)), '\n', '', 'e')
     endif
