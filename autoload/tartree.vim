@@ -6,7 +6,7 @@ endif
 var is_loaded: bool = true
 
 import autoload 'tartree/tartreeRW.vim' as RW
-
+import autoload 'tartree/tarBackend.vim' as TB
 
 # ----------------------------------------------------------------------------
 # TarNode: a single entry (file or directory) in the archive tree.
@@ -29,29 +29,6 @@ const HeaderNode: TarNode = TarNode.new('', '', false, -1, '')
 # ----------------------------------------------------------------------------
 # Module-level helpers (no instance state required)
 # ----------------------------------------------------------------------------
-
-def TarListCommand(path: string): string
-  if path =~ '\.tar\.bz2$' || path =~ '\.tbz$'
-    return 'tar -tjf'
-  elseif path =~ '\.tar\.bz3$'
-    return 'tar --use-compress-program=bzip3 -tf'
-  elseif path =~ '\.tar\.gz$' || path =~ '\.tgz$'
-    return 'tar -tzf'
-  elseif path =~ '\.tar\.lz4$' || path =~ '\.tlz4$'
-    return 'tar --use-compress-program=lz4 -tf'
-  elseif path =~ '\.tar\.lzma$'
-    return 'tar --lzma -tf'
-  elseif path =~ '\.tar\.xz$' || path =~ '\.txz$'
-    return 'tar -tJf'
-  elseif path =~ '\.tar\.Z$'
-    return 'tar -tZf'
-  elseif path =~ '\.tar\.zst$' || path =~ '\.tzst$'
-    return 'tar --zstd -tf'
-  else
-    return 'tar -tf'
-  endif
-enddef
-
 
 def IsHiddenPath(normPath: string): bool
   if get(g:, 'tartree_show_hidden', 0)
@@ -78,6 +55,8 @@ class TarTreeWindow
   var lineNodeMap: list<TarNode> = []
   var showHelp: bool = false
 
+  var backend: TB.TarBackend = TB.GnuTar.new()
+
   # -- Public actions --------------------------------------------------
 
   def Open(argPath: string = ''): void
@@ -96,8 +75,7 @@ class TarTreeWindow
 
     this.archivePath = fnamemodify(archive, ':p')
 
-    var tarCmd: string = TarListCommand(this.archivePath) .. ' ' .. shellescape(this.archivePath)
-    var lines: list<string> = systemlist(tarCmd)
+    var lines: list<string> = this.backend.List(this.archivePath)
     if v:shell_error != 0 || empty(lines)
       echoerr '[TarTree] Failed to execute tar command or empty archive.'
       return
@@ -143,7 +121,8 @@ class TarTreeWindow
       this.RenderTree()
       call setpos('.', cur) 
     else
-      this.ExtractAndOpenFile(node.fullPath)
+      wincmd w
+      call RW.CreateWindow(this.archivePath, node.fullPath)
     endif
   enddef
 
@@ -337,32 +316,6 @@ class TarTreeWindow
       return this.lineNodeMap[lnum - 1]
     endif
     return HeaderNode
-  enddef
-
-  def ExtractAndOpenFile(nodePath: string): void
-    # Kludge: delegate extraction/open to the built-in tar.vim plugin by
-    # driving its listing buffer, then clean up the extra window it leaves.
-    wincmd w
-    #silent! call tar#Browse(this.archivePath)
-    #var lnum = search('\V' .. escape(nodePath, '\'), 'w')
-    #if lnum == 0
-    #  echoerr $'[TarTree] member not found in listing: {nodePath}'
-    #  return
-    #endif
-    #cursor(lnum, 1)
-    #var listingWin = win_getid()
-    #feedkeys("\<CR>", 'x')
-
-    #var newWin = win_getid()
-    #if newWin != listingWin
-      # A new window was opened for the extracted file — close the
-      # original listing window instead, leaving focus on the new one.
-    #  win_gotoid(listingWin)
-    #  close
-    #  win_gotoid(newWin)
-   # endif
-    # EndKludge:
-call RW.CreateWindow(this.archivePath, nodePath)
   enddef
 endclass
 
