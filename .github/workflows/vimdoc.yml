@@ -1,1 +1,48 @@
+name: Generate Vimdoc
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - README.md
+      - doc/pandoc.yaml
+      - doc/vimdoc-filter.lua
+      - .github/workflows/vimdoc.yml
+
+permissions:
+  contents: write
+
+jobs:
+  vimdoc:
+    name: Generate Vimdoc
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate Vimdoc
+        uses: docker://pandoc/core:3.8
+        with:
+          args: >-
+            README.md
+            --from=markdown
+            --to=vimdoc
+            --standalone
+            --columns=78
+            --metadata-file=doc/pandoc.yaml
+            --lua-filter=doc/vimdoc-filter.lua
+            --output=doc/tartree.txt
+
+      - name: Commit generated Vimdoc
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- doc/tartree.txt; then
+            echo "Vimdoc is already up to date."
+            exit 0
+          fi
+          git add doc/tartree.txt
+          git commit -m "docs: regenerate Vimdoc"
+          git push
 
