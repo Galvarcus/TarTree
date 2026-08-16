@@ -32,24 +32,19 @@ var is_loaded: bool = true
 #               the use of this software.
 #######################################################################
 
-
-#######################################################################
-#  Default Settings: 
-#  Global variables moved to import/variables/globals.vim
-
+import autoload 'tartree/tarBackend.vim' as TB
 
 #######################################################################
 # Class: Tar 
 ####################################################################### 
 export class Tar
-  # Buffer-local persisted state (survives the buffer being renamed,
-  # so Write() can be called later without needing the pseudo-name
-  # or an autocommand at all).
   var archivePath: string = ''
   var fileName: string = ''
   var curdir: string = ''
   var tmpdir: string = ''
   var remoteUrl: string = ''
+
+  var backend: TB.TarBackend = TB.GnuTar.new()
 
   def new(this.archivePath = v:none, this.fileName = v:none)
   enddef
@@ -64,6 +59,14 @@ export class Tar
     endif
     var tar = Tar.new(archivePath, fileName)
     tar.Read()
+  enddef
+
+  ###############################################################
+  # Method: ListFiles
+  # Lists the members of an archive without opening any of them.
+  ############################################################### 
+  static def ListFiles(archivePath: string): list<string>
+    return TB.GnuTar.new().List(archivePath)
   enddef
 
   ###############################################################
@@ -125,30 +128,32 @@ export class Tar
       archive = substitute(system('cygpath -u ' .. shellescape(archive, 0)), '\n$', '', 'e')
     endif
 
-    # extra decompression needed for the archive file
-    # TODO: Move this and the similar section in Write() to an independent method/class.
-    var decmp = ''
+    # A member can be a compressed file *in its own right* (e.g. a
+    # ".gz" stored inside the tarball) -- that needs an extra pipe
+    # stage on top of the extraction. This is unrelated to the
+    # archive's own compression, which this.backend handles.
+    var memberDecmp = ''
     var doro = false
     if this.fileName =~ '\.bz2$' && executable('bzcat')
-      decmp = '|bzcat'
+      memberDecmp = '|bzcat'
       doro = true
     elseif this.fileName =~ '\.bz3$' && executable('bz3cat')
-      decmp = '|bz3cat'
+      memberDecmp = '|bz3cat'
       doro = true
     elseif this.fileName =~ '\.t\=gz$' && executable('zcat')
-      decmp = '|zcat'
+      memberDecmp = '|zcat'
       doro = true
     elseif this.fileName =~ '\.lzma$' && executable('lzcat')
-      decmp = '|lzcat'
+      memberDecmp = '|lzcat'
       doro = true
     elseif this.fileName =~ '\.xz$' && executable('xzcat')
-      decmp = '|xzcat'
+      memberDecmp = '|xzcat'
       doro = true
     elseif this.fileName =~ '\.zst$' && executable('zstdcat')
-      decmp = '|zstdcat'
+      memberDecmp = '|zstdcat'
       doro = true
     elseif this.fileName =~ '\.lz4$' && executable('lz4cat')
-      decmp = '|lz4cat'
+      memberDecmp = '|lz4cat'
       doro = true
     else
       if this.fileName =~ '\.bz2$\|\.bz3$\|\.gz$\|\.lzma$\|\.xz$\|\.zip$\|\.Z$'
@@ -156,79 +161,8 @@ export class Tar
       endif
     endif
 
-    if archive =~# '\.bz2$'
-      exe 'sil! r! bzip2 -d -c -- ' .. shellescape(archive, 1)
-          .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-          .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-      exe 'read ' .. escapeFile
-    elseif archive =~# '\.bz3$'
-      exe 'sil! r! bzip3 -d -c -- ' .. shellescape(archive, 1)
-          .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-          .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-      exe 'read ' .. escapeFile
-    elseif archive =~# '\.gz$'
-      exe 'sil! r! gzip -d -c -- ' .. shellescape(archive, 1)
-          .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-          .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-      exe 'read ' .. escapeFile
-    elseif archive =~# '\.tgz$\|\.tbz$\|\.txz$'
-      var kind = Tar.Header(archive)
-      if kind ==? 'bzip2'
-        exe 'sil! r! bzip2 -d -c -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-            .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-        exe 'read ' .. escapeFile
-      elseif kind ==? 'bzip3'
-        exe 'sil! r! bzip3 -d -c -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-            .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-        exe 'read ' .. escapeFile
-      elseif kind ==? 'xz'
-        exe 'sil! r! xz -d -c -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-            .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-        exe 'read ' .. escapeFile
-      elseif kind ==? 'zstd'
-        exe 'sil! r! zstd --decompress --stdout -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-            .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-        exe 'read ' .. escapeFile
-      elseif kind ==? 'gzip'
-        exe 'sil! r! gzip -d -c -- ' .. shellescape(archive, 1)
-            .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-            .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-        exe 'read ' .. escapeFile
-      endif
-    elseif archive =~# '\.lrp$'
-      exe 'sil! r! cat -- ' .. shellescape(archive, 1) .. ' | gzip -d -c - | '
-          .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-          .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-      exe 'read ' .. escapeFile
-    elseif archive =~# '\.lzma$'
-      exe 'sil! r! lzma -d -c -- ' .. shellescape(archive, 1)
-          .. '| ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-          .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-      exe 'read ' .. escapeFile
-    elseif archive =~# '\.xz$\|\.txz$'
-      exe 'sil! r! xz --decompress --stdout -- ' .. shellescape(archive, 1) .. ' | '
-          .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-          .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-      exe 'read ' .. escapeFile
-    elseif archive =~# '\.lz4$\|\.tlz4$'
-      exe 'sil! r! lz4 --decompress --stdout -- ' .. shellescape(archive, 1) .. ' | '
-          .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' - '
-          .. g:tar_secure .. shellescape(this.fileName, 1) .. decmp
-      exe 'read ' .. escapeFile
-    else
-      if archive =~ '^\s*-'
-        # a name starting with a dash could be taken as an option
-        archive = substitute(archive, '-', './-', '')
-      endif
-      exe 'silent r! ' .. g:tartree_tar_cmd .. ' -' .. g:tartree_tar_readoptions .. ' '
-          .. shellescape(archive, 1) .. ' ' .. g:tar_secure
-          .. shellescape(this.fileName, 1) .. decmp
-      exe 'read ' .. escapeFile
-    endif
+    exe 'sil! r! ' .. this.backend.ExtractCmd(archive, this.fileName, memberDecmp)
+    exe 'read ' .. escapeFile
 
     redraw!
 
@@ -319,46 +253,10 @@ export class Tar
       mkdir(dir, 'p')
     endif
 
-    # handle compressed archives; empty compress == "nothing to recompress"
-    var compress = ''
-    var tgz = false
-    if archive =~# '\.bz2$'
-      system('bzip2 -d -- ' .. shellescape(archive, 0))
-      archive = substitute(archive, '\.bz2$', '', 'e')
-      compress = 'bzip2 -- ' .. shellescape(archive, 0)
-    elseif archive =~# '\.bz3$'
-      system('bzip3 -d -- ' .. shellescape(archive, 0))
-      archive = substitute(archive, '\.bz3$', '', 'e')
-      compress = 'bzip3 -- ' .. shellescape(archive, 0)
-    elseif archive =~# '\.tgz$'
-      system('gzip -d -- ' .. shellescape(archive, 0))
-      archive = substitute(archive, '\.tgz$', '.tar', 'e')
-      compress = 'gzip -- ' .. shellescape(archive, 0)
-      tgz = true
-    elseif archive =~# '\.gz$'
-      system('gzip -d -- ' .. shellescape(archive, 0))
-      archive = substitute(archive, '\.gz$', '', 'e')
-      compress = 'gzip -- ' .. shellescape(archive, 0)
-    elseif archive =~# '\.xz$'
-      system('xz -d -- ' .. shellescape(archive, 0))
-      archive = substitute(archive, '\.xz$', '', 'e')
-      compress = 'xz -- ' .. shellescape(archive, 0)
-    elseif archive =~# '\.zst$'
-      system('zstd --decompress --rm -- ' .. shellescape(archive, 0))
-      archive = substitute(archive, '\.zst$', '', 'e')
-      compress = 'zstd --rm -- ' .. shellescape(archive, 0)
-    elseif archive =~# '\.lz4$'
-      system('lz4 --decompress --rm -- ' .. shellescape(archive, 0))
-      archive = substitute(archive, '\.lz4$', '', 'e')
-      compress = 'lz4 --rm -- ' .. shellescape(archive, 0)
-    elseif archive =~# '\.lzma$'
-      system('lzma -d -- ' .. shellescape(archive, 0))
-      archive = substitute(archive, '\.lzma$', '', 'e')
-      compress = 'lzma -- ' .. shellescape(archive, 0)
-    endif
-    # Note: no support for name.tar.tbz/.txz/.tlz4/.tzst
-
-    if v:shell_error != 0
+    # Decompress the archive on disk (no-op if it isn't compressed).
+    # `kind`/`container` are threaded through to Recompress() below.
+    var dec = this.backend.Decompress(archive)
+    if !dec.ok
       Tar.Msg('Write', 'error', $'sorry, unable to update {archive} with {filename}')
       lcd ..
       Tar.Rmdir('_ZIPVIM_')
@@ -366,6 +264,9 @@ export class Tar
       &report = repkeep
       return
     endif
+    archive = dec.path
+    var kind = dec.kind
+    var container = dec.container
 
     if filename =~ '/'
       var dirpath = substitute(filename, '/[^/]\+$', '', 'e')
@@ -396,21 +297,20 @@ export class Tar
       archive = substitute(system('cygpath ' .. shellescape(archive, 0)), '\n', '', 'e')
     endif
 
-    # delete old member from archive
-    # Note: BSD tar does not support --delete
-    # Never go full BSD. Install GNU tar
-    system(g:tartree_tar_cmd .. ' ' .. g:tartree_tar_delfile .. ' ' .. shellescape(archive, 0) .. g:tar_secure .. shellescape(filename, 0))
-    if v:shell_error != 0
+    # delete old member from archive, then add the updated one back in
+    var delErr = this.backend.DeleteMember(archive, filename)
+    if delErr != 0
       Tar.Msg('Write', 'error', $'sorry, unable to update {fnameescape(archive)} with {fnameescape(filename)} --delete not supported?')
     else
-      # add the updated member back in
-      system(g:tartree_tar_cmd .. ' -' .. g:tartree_tar_writeoptions .. ' ' .. shellescape(archive, 0) .. g:tar_secure .. shellescape(filename, 0))
-      if v:shell_error != 0
+      var addErr = this.backend.AddMember(archive, filename)
+      if addErr != 0
         Tar.Msg('Write', 'error', $'sorry, unable to update {fnameescape(archive)} with {fnameescape(filename)}')
-      elseif compress != ''
-        system(compress)
-        if tgz
-          rename(archive .. '.gz', substitute(archive, '\.tar$', '.tgz', 'e'))
+      elseif kind != ''
+        var rec = this.backend.Recompress(archive, kind, container)
+        if !rec.ok
+          Tar.Msg('Write', 'error', $'sorry, unable to recompress {fnameescape(archive)}')
+        else
+          archive = rec.path
         endif
       endif
     endif
@@ -439,7 +339,6 @@ export class Tar
 
   ###############################################################
   # Helpers:
-  # # TODO: Move some or all to external class/methods for reuse
   ############################################################### 
 
   ###############################################################
@@ -465,31 +364,6 @@ export class Tar
       delete(dir, 'rf')
     endif
   enddef
-  ###############################################################
-  # Method: Header
-  # Examines file header for compression detection
-  ############################################################### 
-  static def Header(fname: string): string
-    var header = readblob(fname, 0, 6)
-    if header[0 : 2] == str2blob(['BZh'])                  # bzip2
-      return 'bzip2'
-    elseif header[0 : 2] == str2blob(['BZ3'])               # bzip3
-      return 'bzip3'
-    elseif header == str2blob(["\xfd7zXZ\n"])               # xz
-      return 'xz'
-    elseif header[0 : 3] == str2blob(["\x28\xb5\x2f\xfd"])  # zstd
-      return 'zstd'
-    elseif header[0 : 3] == str2blob(["\x04\x22\x4d\x18"])  # lz4
-      return 'lz4'
-    elseif header[0 : 1] == str2blob(["\x1f\x9d"])
-        || header[0 : 1] == str2blob(["\x1f\x8b"])
-        || header[0 : 1] == str2blob(["\x1f\x9e"])
-        || header[0 : 1] == str2blob(["\x1f\xa0"])
-        || header[0 : 1] == str2blob(["\x1f\x1e"])          # gzip variants
-      return 'gzip'
-    endif
-    return 'unknown'
-  enddef
 endclass
 
 #######################################################################
@@ -505,8 +379,11 @@ export def CreateWindow(archivePath: string, fileName: string)
   Tar.CreateWindow(archivePath, fileName)
 enddef
 
+export def ListFiles(archivePath: string): list<string>
+  return Tar.ListFiles(archivePath)
+enddef
+
 # Workaround: E1017
 def TarWriteCmd()
   Tar.WriteCurrent()
 enddef
-
