@@ -2,6 +2,7 @@ name: Generate Vimdoc
 
 on:
   push:
+  workflow_dispatch:
     branches:
       - main
     paths:
