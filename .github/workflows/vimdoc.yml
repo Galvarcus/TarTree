@@ -36,14 +36,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [ ! -f doc/tartree.txt ]; then
-            echo "Vimdoc was not generated."
-            exit 1
-          fi
-          if git diff --quiet -- doc/tartree.txt; then
-            echo "Vimdoc is already up to date."
-            exit 0
-          fi
+          
           git add doc/tartree.txt
           git commit -m "docs: regenerate Vimdoc"
           git push origin HEAD:${{ github.ref_name }}
