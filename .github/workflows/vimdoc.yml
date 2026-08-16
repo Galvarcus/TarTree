@@ -28,6 +28,7 @@ jobs:
             --to=vimdoc
             --standalone
             --columns=78
+            --toc=true
             --metadata-file=doc/pandoc.yaml
             --lua-filter=doc/vimdoc-filter.lua
             --output=doc/tartree.txt
