@@ -6,25 +6,25 @@
                                        Type |gO| to see the table of contents.
 
 ==============================================================================
-TarTree                                                                *tartree*
+TarTree                                                        *tartree-tartree*
 
 A simple tree browser to view/edit files within a tar archive.
 
 ==============================================================================
-Requirements                                                      *requirements*
+Requirements                                              *tartree-requirements*
 
 TarTree was written in vim9script and thus depends on Vim 9. Built and tested
 on Vim 9.2.
 
 ==============================================================================
-Installation                                                      *installation*
+Installation                                              *tartree-installation*
 
 Use your favorite plugin manager
 
 ------------------------------------------------------------------------------
-Examples                                                 *installation-examples*
+Examples                                         *tartree-installation-examples*
 
-VUNDLE                                                     *installation-vundle*
+VUNDLE                                             *tartree-installation-vundle*
 
 Add this to your .vimrc
 
@@ -33,7 +33,7 @@ Add this to your .vimrc
 <
 Then run `:PluginInstall`
 
-VIM-PLUG                                                 *installation-vim-plug*
+VIM-PLUG                                         *tartree-installation-vim-plug*
 
 Add this to your .vimrc
 
@@ -43,7 +43,7 @@ Add this to your .vimrc
 Then run `:PlugInstall`
 
 ==============================================================================
-Commands                                                              *commands*
+Commands                                                      *tartree-commands*
 
 `:TarTree PATH_TO_TAR_FILE`
 
@@ -68,7 +68,7 @@ Toggles on/off the tree view
 Closes the TarTree pane
 
 ==============================================================================
-Global Variables                                              *global-variables*
+Global Variables                                      *tartree-global-variables*
 
 To customize TarTree, set the following global variables in your `~/vimrc`
 prefixed with `let` for legacy .vimrc.
