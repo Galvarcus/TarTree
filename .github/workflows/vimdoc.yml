@@ -1,8 +1,6 @@
 name: Generate Vimdoc
-
 on:
   push:
-  workflow_dispatch:
     branches:
       - main
     paths:
@@ -10,10 +8,9 @@ on:
       - doc/pandoc.yaml
       - doc/vimdoc-filter.lua
       - .github/workflows/vimdoc.yml
-
+  workflow_dispatch:
 permissions:
   contents: write
-
 jobs:
   vimdoc:
     name: Generate Vimdoc
@@ -49,5 +46,4 @@ jobs:
           fi
           git add doc/tartree.txt
           git commit -m "docs: regenerate Vimdoc"
-          git push
-
+          git push origin HEAD:${{ github.ref_name }}
