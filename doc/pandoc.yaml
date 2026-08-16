@@ -2,3 +2,4 @@ title: TarTree
 author: Galvarcus
 abstract: A simple tree browser to view/edit files within a tar archive.
 filename: tartree.txt
+vimdoc-prefix: tartree
