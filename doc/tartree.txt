@@ -5,6 +5,15 @@
 
                                        Type |gO| to see the table of contents.
 
+TarTree ...................................................... |tartree-tartree|
+Requirements ............................................ |tartree-requirements|
+Installation ............................................ |tartree-installation|
+  Examples ..................................... |tartree-installation-examples|
+    Vundle ....................................... |tartree-installation-vundle|
+    Vim-Plug ................................... |tartree-installation-vim-plug|
+Commands .................................................... |tartree-commands|
+Global Variables .................................... |tartree-global-variables|
+
 ==============================================================================
 TarTree                                                        *tartree-tartree*
 
