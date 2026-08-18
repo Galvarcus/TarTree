@@ -6,6 +6,8 @@ endif
 var is_loaded: bool = true
 
 import autoload 'tartree/tartreeRW.vim' as RW
+import autoload 'tartree/archiveBackend.vim' as AB
+import autoload 'tartree/archiveRegistry.vim' as Registry
 import autoload 'tartree/tarBackend.vim' as TB
 
 # ----------------------------------------------------------------------------
@@ -18,13 +20,12 @@ class TarNode
   public var expanded: bool = false
   public var children: list<TarNode> = []
   public var level: number = 0
-  public var parentPath: string = ''
 
-  def new(this.name, this.fullPath, this.isDir, this.level, this.parentPath)
+  def new(this.name, this.fullPath, this.isDir, this.level)
   enddef
 endclass
 
-const HeaderNode: TarNode = TarNode.new('', '', false, -1, '')
+const HeaderNode: TarNode = TarNode.new('', '', false, -1)
 
 # ----------------------------------------------------------------------------
 # Module-level helpers (no instance state required)
@@ -55,7 +56,7 @@ class TarTreeWindow
   var lineNodeMap: list<TarNode> = []
   var showHelp: bool = false
 
-  var backend: TB.TarBackend = TB.GnuTar.new()
+  var backend: AB.ArchiveBackend = TB.GnuTar.new()
 
   # -- Public actions --------------------------------------------------
 
@@ -66,18 +67,30 @@ class TarTreeWindow
     endif
 
     if empty(archive) || !filereadable(archive)
-      archive = input('Path to tar archive: ', '', 'file')
+      archive = input('Path to archive: ', '', 'file')
       if empty(archive) || !filereadable(archive)
-        echoerr '[TarTree] Invalid or unreadable tar file: ' .. archive
+        echoerr '[TarTree] Invalid or unreadable archive file: ' .. archive
         return
       endif
     endif
 
     this.archivePath = fnamemodify(archive, ':p')
 
+    var archiveType = AB.ArchiveTypeDetect(this.archivePath)
+    if archiveType ==# 'unknown'
+      echoerr '[TarTree] Could not determine archive type for: ' .. this.archivePath
+      return
+    endif
+    try
+      this.backend = Registry.NewBackend(archiveType)
+    catch
+      echoerr $'[TarTree] No backend available for archive type "{archiveType}": {this.archivePath}'
+      return
+    endtry
+
     var lines: list<string> = this.backend.List(this.archivePath)
     if v:shell_error != 0 || empty(lines)
-      echoerr '[TarTree] Failed to execute tar command or empty archive.'
+      echoerr '[TarTree] Failed to execute archive-listing command or empty archive.'
       return
     endif
 
@@ -122,7 +135,7 @@ class TarTreeWindow
       call setpos('.', cur) 
     else
       wincmd w
-      call RW.CreateWindow(this.archivePath, node.fullPath)
+      call RW.CreateWindow(this.archivePath, node.fullPath, this.backend)
     endif
   enddef
 
@@ -142,7 +155,7 @@ class TarTreeWindow
     this.rootPath = ''
 
     var nodeMap: dict<TarNode> = {}
-    var rootNode: TarNode = TarNode.new(rootName, '', true, 0, '')
+    var rootNode: TarNode = TarNode.new(rootName, '', true, 0)
     rootNode.expanded = true
     nodeMap[''] = rootNode
 
@@ -170,7 +183,7 @@ class TarTreeWindow
         var nodeIsDir: bool = !isLast || isDirEntry
 
         if !has_key(nodeMap, curr)
-          var newNode: TarNode = TarNode.new(part, curr .. (nodeIsDir ? '/' : ''), nodeIsDir, i + 1, parent)
+          var newNode: TarNode = TarNode.new(part, curr .. (nodeIsDir ? '/' : ''), nodeIsDir, i + 1)
           nodeMap[curr] = newNode
           if has_key(nodeMap, parent)
             add(nodeMap[parent].children, newNode)
