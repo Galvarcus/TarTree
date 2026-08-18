@@ -6,26 +6,14 @@ endif
 var is_loaded: bool = true
 
 
-#######################################################################
-# Usage: this and future backends like it (zip, bzip, etc.) are meant
-# as a method of calling each in the same manner while keeping the Tree
-# and RW scripts archive-type neutral (more work in those to do).
-#
-# Import: specific backend or multiple
-# import autoload 'tartree/tarBackend.vim'
-#
-# Set Backend: can be chosen based of conditionals when multiple
-# available.
-# var backend: tarBackend.TarBackend = tarBackend.GnuTar.new()
-# 
-# Reference: as needed
-# For instance, when defined inside a class: 
-# var = this.backend.ExtractCmd()
-#######################################################################
+import autoload 'tartree/archiveBackend.vim' as AB
 
 #######################################################################
 # Method: DetectCompressionMagic
 # Detects compression based on file header when ext not obvious
+# Left as-is from the original.
+# TODO: investigate methods to incorporate this check into
+# `archiveBackend.ArchiveTypeDetect()` to remove duplicitous code.
 #######################################################################
 export def DetectCompressionMagic(fname: string): string
   var header = readblob(fname, 0, 6)
@@ -50,45 +38,10 @@ export def DetectCompressionMagic(fname: string): string
 enddef
 
 #######################################################################
-# Interface: TarBackend
-# Caller interface
-########################################################################
-export interface TarBackend
-
-  # Returns the compression type based on extension
-  def DetectCompression(archive: string): string
-
-  # Returns the ambiguous suffixes (e.g. tgz)
-  def ContainerSuffix(archive: string): string
-
-  # Returns commnd for extraction with optional decomp pipe
-  def ExtractCmd(archive: string, member: string, memberDecmp: string): string
-
-  # Decompression in place. 
-  # Returns {path, kind, container, ok}: 
-  # `path` is filename
-  # `kind` and `container` are handed back to Recompress().
-  def Decompress(archive: string): dict<any>
-
-  # Recompression. Returns {path, ok}.
-  def Recompress(path: string, kind: string, container: string): dict<any>
-
-  # Removes `member` from archive
-  def DeleteMember(archive: string, member: string): number
-
-  # Adds/updates member to archive
-  def AddMember(archive: string, member: string): number
-
-  # Lists the member paths. Returns list or []
-  def List(archive: string): list<string>
-endinterface
-
+# Class: GnuTar
+# ArchiveBackend implementation targeting GNU tar's compact option style.
 #######################################################################
-# Class: GnuTar (but not just GNU tar)
-# Originally named when I had the assinine notion to create a seperate
-# backend for BSD tar. 
-#######################################################################
-export class GnuTar implements TarBackend
+export class GnuTar implements AB.ArchiveBackend
   # Unambiguous extension -> kind. ('.lrp' is an old gzip'd-tar alias.)
   var extKind: dict<string> = {
       '\.bz2$': 'bzip2',
