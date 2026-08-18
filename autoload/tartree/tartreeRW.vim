@@ -32,6 +32,8 @@ var is_loaded: bool = true
 #               the use of this software.
 #######################################################################
 
+import autoload 'tartree/archiveBackend.vim' as AB
+import autoload 'tartree/archiveRegistry.vim' as Registry
 import autoload 'tartree/tarBackend.vim' as TB
 
 #######################################################################
@@ -44,29 +46,21 @@ export class Tar
   var tmpdir: string = ''
   var remoteUrl: string = ''
 
-  var backend: TB.TarBackend = TB.GnuTar.new()
+  var backend: AB.ArchiveBackend = TB.GnuTar.new()
 
-  def new(this.archivePath = v:none, this.fileName = v:none)
+  def new(this.archivePath = v:none, this.fileName = v:none, this.backend = v:none)
   enddef
   
   ###############################################################
   # Entry Point: opens a new window on one file from the archive.
   ############################################################### 
-  static def CreateWindow(archivePath: string, fileName: string)
+  static def CreateWindow(archivePath: string, fileName: string, backend: AB.ArchiveBackend = TB.GnuTar.new())
     noswapfile new
     if !exists('g:tar_nomax') || g:tar_nomax == 0
       wincmd _
     endif
-    var tar = Tar.new(archivePath, fileName)
+    var tar = Tar.new(archivePath, fileName, backend)
     tar.Read()
-  enddef
-
-  ###############################################################
-  # Method: ListFiles
-  # Lists the members of an archive without opening any of them.
-  ############################################################### 
-  static def ListFiles(archivePath: string): list<string>
-    return TB.GnuTar.new().List(archivePath)
   enddef
 
   ###############################################################
@@ -80,7 +74,15 @@ export class Tar
       Tar.Msg('WriteCurrent', 'error', 'this buffer has no associated tar filename')
       return
     endif
-    var tar = Tar.new(b:tar_archive, b:tar_filename)
+    var archiveType = AB.ArchiveTypeDetect(b:tar_archive)
+    var backend: AB.ArchiveBackend
+    try
+      backend = Registry.NewBackend(archiveType)
+    catch
+      Tar.Msg('WriteCurrent', 'error', $'no backend for archive type "{archiveType}": {b:tar_archive}')
+      return
+    endtry
+    var tar = Tar.new(b:tar_archive, b:tar_filename, backend)
     tar.curdir = get(b:, 'tar_curdir', getcwd())
     tar.tmpdir = get(b:, 'tar_tmpdir', tempname())
     tar.remoteUrl = get(b:, 'tar_remote', '')
@@ -375,12 +377,8 @@ augroup TarClass
 augroup END
 
 # External entry points 
-export def CreateWindow(archivePath: string, fileName: string)
-  Tar.CreateWindow(archivePath, fileName)
-enddef
-
-export def ListFiles(archivePath: string): list<string>
-  return Tar.ListFiles(archivePath)
+export def CreateWindow(archivePath: string, fileName: string, backend: AB.ArchiveBackend = TB.GnuTar.new())
+  Tar.CreateWindow(archivePath, fileName, backend)
 enddef
 
 # Workaround: E1017
