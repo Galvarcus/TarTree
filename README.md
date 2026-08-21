@@ -18,10 +18,10 @@ Requires [Logger](https://github.com/Galvarcus/Logger) import functionality.
 Use your favorite plugin manager
 
 ## Examples {#installation-examples}
-<details>
 
-### <summary>Vundle {#installation-vundle}
-</summary>
+<details>
+<summary>Vundle {#installation-vundle}</summary>
+
 Add this to your .vimrc
 
 ```vim
@@ -31,9 +31,8 @@ Plugin 'Galvarcus/TarTree'
 Then run `:PluginInstall`
 </details>
 <details>
+<summary>Vim-Plug {#installation-vim-plug}</summary>
 
-### <summary>Vim-Plug {#installation-vim-plug}
-</summary>
 Add this to your .vimrc
 
 ```vim
@@ -43,6 +42,7 @@ Plug 'Galvarcus/TarTree'
 
 Then run `:PlugInstall`
 </details>
+
 # Commands {#commands}
 
 `:TarTree PATH_TO_TAR_FILE`
