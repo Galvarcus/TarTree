@@ -1,5 +1,14 @@
 vim9script
 
+if exists('s:is_loaded')
+  finish
+endif
+var is_loaded: bool = true
+
+# Logger
+import 'Logger/logger.vim' as Log
+var log = Log.Logger.new('TarTree', expand('<sfile>:t'))
+
 #######################################################################
 # archiveRegistry.vim - to avoid circular imports via archiveBackend.vim
 # 
@@ -22,7 +31,7 @@ export def NewBackend(archiveType: string): AB.ArchiveBackend
   #   return ZB.Zip.new()
   # elseif archiveType ==# 'gzip'
   #   return GzB.Gzip.new()
-
-  throw $'[tartree] no backend registered for archive type: {archiveType}'
+  
+  throw log.Fmt('No backend registered for archive type: ' .. archiveType)
 enddef
 

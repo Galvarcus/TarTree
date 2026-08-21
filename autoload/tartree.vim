@@ -5,6 +5,10 @@ if exists('s:is_loaded')
 endif
 var is_loaded: bool = true
 
+# Logger
+import 'Logger/logger.vim' as Log
+var log = Log.Logger.new('TarTree', expand('<sfile>:t'))
+
 import autoload 'tartree/tartreeRW.vim' as RW
 import autoload 'tartree/archiveBackend.vim' as AB
 import autoload 'tartree/archiveRegistry.vim' as Registry
@@ -69,7 +73,7 @@ class TarTreeWindow
     if empty(archive) || !filereadable(archive)
       archive = input('Path to archive: ', '', 'file')
       if empty(archive) || !filereadable(archive)
-        echoerr '[TarTree] Invalid or unreadable archive file: ' .. archive
+        log.Error('Invalid or unreadable archive file: ' .. archive)
         return
       endif
     endif
@@ -78,19 +82,19 @@ class TarTreeWindow
 
     var archiveType = AB.ArchiveTypeDetect(this.archivePath)
     if archiveType ==# 'unknown'
-      echoerr '[TarTree] Could not determine archive type for: ' .. this.archivePath
+      log.Error('Could not determine archive type for: ' .. this.archivePath)
       return
     endif
     try
       this.backend = Registry.NewBackend(archiveType)
     catch
-      echoerr $'[TarTree] No backend available for archive type "{archiveType}": {this.archivePath}'
+      log.Error('No backend available for archive type ' .. archiveType .. ': ' .. this.archivePath)
       return
     endtry
 
     var lines: list<string> = this.backend.List(this.archivePath)
     if v:shell_error != 0 || empty(lines)
-      echoerr '[TarTree] Failed to execute archive-listing command or empty archive.'
+      log.Error('Failed to execute archive-listing command or empty archive.')
       return
     endif
 

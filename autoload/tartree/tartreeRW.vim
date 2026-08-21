@@ -5,6 +5,10 @@ if exists('s:is_loaded')
 endif
 var is_loaded: bool = true
 
+# Logger
+import 'Logger/logger.vim' as Log
+var log = Log.Logger.new('TarTree', expand('<sfile>:t'))
+
 #######################################################################
 # NOTICE: This is a stripped, modified, Vim9 OOP class rewrite of Vim's
 # runtime/autoload/tar.vim. Original license retained below, sans
@@ -50,7 +54,7 @@ export class Tar
 
   def new(this.archivePath = v:none, this.fileName = v:none, this.backend = v:none)
   enddef
-  
+
   ###############################################################
   # Entry Point: opens a new window on one file from the archive.
   ############################################################### 
@@ -71,7 +75,7 @@ export class Tar
   ############################################################### 
   static def WriteCurrent()
     if !exists('b:tar_archive') || !exists('b:tar_filename')
-      Tar.Msg('WriteCurrent', 'error', 'this buffer has no associated tar filename')
+      Log.Error('This buffer has no associated tar filename.')
       return
     endif
     var archiveType = AB.ArchiveTypeDetect(b:tar_archive)
@@ -79,7 +83,7 @@ export class Tar
     try
       backend = Registry.NewBackend(archiveType)
     catch
-      Tar.Msg('WriteCurrent', 'error', $'no backend for archive type "{archiveType}": {b:tar_archive}')
+      Log.Error('no backend for archive type "' .. archiveType .. '":' .. b:tar_archive})
       return
     endtry
     var tar = Tar.new(b:tar_archive, b:tar_filename, backend)
@@ -100,8 +104,8 @@ export class Tar
 
     # be careful not to execute specially crafted paths
     var escapeFile = this.fileName
-        ->substitute(g:tar_leading_pat, '', '')
-        ->fnameescape()
+      ->substitute(g:tar_leading_pat, '', '')
+      ->fnameescape()
 
     this.curdir = getcwd()
     var tmp = tempname()
@@ -114,7 +118,7 @@ export class Tar
     try
       exe 'lcd ' .. fnameescape(this.tmpdir)
     catch /^Vim\%((\a\+)\)\=:E344/
-      Tar.Msg('Read', 'error', 'cannot lcd to temporary directory')
+      Log.Error('Cannot lcd to temporary directory')
       &report = repkeep
       return
     endtry
@@ -170,10 +174,10 @@ export class Tar
 
     if v:shell_error != 0
       lcd ..
-      Tar.Rmdir('_ZIPVIM_')
+        Tar.Rmdir('_ZIPVIM_')
       exe 'lcd ' .. fnameescape(this.curdir)
       &report = repkeep
-      Tar.Msg('Read', 'error', $'sorry, unable to open or extract {archive} with {this.fileName}')
+      Log.Error('Unable to open or extract ' .. archive .. ' with ' .. this.fileName)
       return
     endif
 
@@ -217,7 +221,7 @@ export class Tar
       this.fileName = get(b:, 'tar_filename', '')
     endif
     if this.archivePath == '' || this.fileName == ''
-      Tar.Msg('Write', 'error', 'no tar archive/filename associated with this buffer')
+      Log.Error('No tar archive/filename associated with this buffer')
       return
     endif
     if this.curdir == ''
@@ -234,7 +238,7 @@ export class Tar
     if !executable(g:tartree_tar_cmd)
       redraw!
       &report = repkeep
-      Tar.Msg('Write', 'error', $'{g:tartree_tar_cmd} is not executable')
+      Log.Error(g:tartree_tar_cmd .. ' is not executable')
       return
     endif
 
@@ -259,9 +263,9 @@ export class Tar
     # `kind`/`container` are threaded through to Recompress() below.
     var dec = this.backend.Decompress(archive)
     if !dec.ok
-      Tar.Msg('Write', 'error', $'sorry, unable to update {archive} with {filename}')
+      Log.Error('Unable to update ' .. archive .. ' with ' .. filename)
       lcd ..
-      Tar.Rmdir('_ZIPVIM_')
+        Tar.Rmdir('_ZIPVIM_')
       exe 'lcd ' .. fnameescape(pwdkeep)
       &report = repkeep
       return
@@ -302,15 +306,15 @@ export class Tar
     # delete old member from archive, then add the updated one back in
     var delErr = this.backend.DeleteMember(archive, filename)
     if delErr != 0
-      Tar.Msg('Write', 'error', $'sorry, unable to update {fnameescape(archive)} with {fnameescape(filename)} --delete not supported?')
+      Log.Error('Unable to update ' .. fnameescape(archive) .. ' with ' .. fnameescape(filename) .. ' --delete not supported?')
     else
       var addErr = this.backend.AddMember(archive, filename)
       if addErr != 0
-        Tar.Msg('Write', 'error', $'sorry, unable to update {fnameescape(archive)} with {fnameescape(filename)}')
+        Log.Error('Unable to update ' .. fnameescape(archive) .. ' with ' .. fnameescape(filename))
       elseif kind != ''
         var rec = this.backend.Recompress(archive, kind, container)
         if !rec.ok
-          Tar.Msg('Write', 'error', $'sorry, unable to recompress {fnameescape(archive)}')
+          Log.Error('Unable to recompress ' .. fnameescape(archive))
         else
           archive = rec.path
         endif
@@ -332,7 +336,7 @@ export class Tar
     endif
 
     lcd ..
-    Tar.Rmdir('_ZIPVIM_')
+      Tar.Rmdir('_ZIPVIM_')
     exe 'lcd ' .. fnameescape(pwdkeep)
     setlocal nomodified
 
@@ -343,20 +347,6 @@ export class Tar
   # Helpers:
   ############################################################### 
 
-  ###############################################################
-  # Method: Msg
-  # message handler
-  ############################################################### 
-  static def Msg(func: string, severity: string, msg: string)
-    redraw!
-    if severity =~? 'error'
-      echohl Error
-    else
-      echohl WarningMsg
-    endif
-    echom $'***{severity}*** ({func}) {msg}'
-    echohl None
-  enddef
   ###############################################################
   # Method: Rmdir
   # does exactly what you think it does

@@ -10,31 +10,39 @@ A simple tree browser to view/edit files within a tar archive.
 
 TarTree was written in vim9script and thus depends on Vim 9. Built and tested on Vim 9.2.
 
+Requires [Logger](https://github.com/Galvarcus/Logger) import functionality.
+
+
 # Installation {#installation}
 
 Use your favorite plugin manager
 
 ## Examples {#installation-examples}
-
+<details>
+<summary>
 ### Vundle {#installation-vundle}
-
+</summary>
 Add this to your .vimrc
 
 ```vim
+Plugin 'Galvarcus/Logger'
 Plugin 'Galvarcus/TarTree'
 ```
 Then run `:PluginInstall`
-
+</details>
+<details>
+<summary>
 ### Vim-Plug {#installation-vim-plug}
-
+</summary>
 Add this to your .vimrc
 
 ```vim
+Plug 'Galvarcus/Logger'
 Plug 'Galvarcus/TarTree'
 ```
 
 Then run `:PlugInstall`
-
+</details>
 # Commands {#commands}
 
 `:TarTree PATH_TO_TAR_FILE`
