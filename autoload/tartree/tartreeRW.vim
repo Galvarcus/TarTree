@@ -75,7 +75,7 @@ export class Tar
   ############################################################### 
   static def WriteCurrent()
     if !exists('b:tar_archive') || !exists('b:tar_filename')
-      Log.Error('This buffer has no associated tar filename.')
+      log.Error('This buffer has no associated tar filename.')
       return
     endif
     var archiveType = AB.ArchiveTypeDetect(b:tar_archive)
@@ -83,7 +83,7 @@ export class Tar
     try
       backend = Registry.NewBackend(archiveType)
     catch
-      Log.Error('no backend for archive type "' .. archiveType .. '":' .. b:tar_archive})
+      log.Error('no backend for archive type "' .. archiveType .. '":' .. b:tar_archive})
       return
     endtry
     var tar = Tar.new(b:tar_archive, b:tar_filename, backend)
@@ -118,7 +118,7 @@ export class Tar
     try
       exe 'lcd ' .. fnameescape(this.tmpdir)
     catch /^Vim\%((\a\+)\)\=:E344/
-      Log.Error('Cannot lcd to temporary directory')
+      log.Error('Cannot lcd to temporary directory')
       &report = repkeep
       return
     endtry
@@ -177,7 +177,7 @@ export class Tar
         Tar.Rmdir('_ZIPVIM_')
       exe 'lcd ' .. fnameescape(this.curdir)
       &report = repkeep
-      Log.Error('Unable to open or extract ' .. archive .. ' with ' .. this.fileName)
+      log.Error('Unable to open or extract ' .. archive .. ' with ' .. this.fileName)
       return
     endif
 
@@ -221,7 +221,7 @@ export class Tar
       this.fileName = get(b:, 'tar_filename', '')
     endif
     if this.archivePath == '' || this.fileName == ''
-      Log.Error('No tar archive/filename associated with this buffer')
+      log.Error('No tar archive/filename associated with this buffer')
       return
     endif
     if this.curdir == ''
@@ -238,7 +238,7 @@ export class Tar
     if !executable(g:tartree_tar_cmd)
       redraw!
       &report = repkeep
-      Log.Error(g:tartree_tar_cmd .. ' is not executable')
+      log.Error(g:tartree_tar_cmd .. ' is not executable')
       return
     endif
 
@@ -263,7 +263,7 @@ export class Tar
     # `kind`/`container` are threaded through to Recompress() below.
     var dec = this.backend.Decompress(archive)
     if !dec.ok
-      Log.Error('Unable to update ' .. archive .. ' with ' .. filename)
+      log.Error('Unable to update ' .. archive .. ' with ' .. filename)
       lcd ..
         Tar.Rmdir('_ZIPVIM_')
       exe 'lcd ' .. fnameescape(pwdkeep)
@@ -306,15 +306,15 @@ export class Tar
     # delete old member from archive, then add the updated one back in
     var delErr = this.backend.DeleteMember(archive, filename)
     if delErr != 0
-      Log.Error('Unable to update ' .. fnameescape(archive) .. ' with ' .. fnameescape(filename) .. ' --delete not supported?')
+      log.Error('Unable to update ' .. fnameescape(archive) .. ' with ' .. fnameescape(filename) .. ' --delete not supported?')
     else
       var addErr = this.backend.AddMember(archive, filename)
       if addErr != 0
-        Log.Error('Unable to update ' .. fnameescape(archive) .. ' with ' .. fnameescape(filename))
+        log.Error('Unable to update ' .. fnameescape(archive) .. ' with ' .. fnameescape(filename))
       elseif kind != ''
         var rec = this.backend.Recompress(archive, kind, container)
         if !rec.ok
-          Log.Error('Unable to recompress ' .. fnameescape(archive))
+          log.Error('Unable to recompress ' .. fnameescape(archive))
         else
           archive = rec.path
         endif
